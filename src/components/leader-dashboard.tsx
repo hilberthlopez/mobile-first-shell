@@ -96,7 +96,7 @@ export function LeaderDashboard({ userName, role }: { userName?: string; role?: 
           <div className="w-full overflow-x-auto">
             <div className="min-w-[420px]">
               <ChartContainer config={chartConfig} className="h-[260px] w-full">
-                <BarChart data={DAILY_COLLECTIONS} margin={{ left: 4, right: 8, top: 8 }}>
+                <BarChart data={chartData} margin={{ left: 4, right: 8, top: 8 }}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
                   <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
                   <YAxis
