@@ -28,12 +28,32 @@ export default defineConfig({
           ],
         },
         workbox: {
-          navigateFallbackDenylist: [/^\/~oauth/],
+          navigateFallback: "/",
+          navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff2}"],
           runtimeCaching: [
             {
               urlPattern: ({ request }) => request.mode === "navigate",
               handler: "NetworkFirst",
-              options: { cacheName: "html-cache" },
+              options: {
+                cacheName: "html-cache",
+                networkTimeoutSeconds: 3,
+              },
+            },
+            {
+              urlPattern: ({ request, sameOrigin }) =>
+                sameOrigin && ["style", "script", "worker"].includes(request.destination),
+              handler: "StaleWhileRevalidate",
+              options: { cacheName: "asset-cache" },
+            },
+            {
+              urlPattern: ({ request, sameOrigin }) =>
+                sameOrigin && ["image", "font"].includes(request.destination),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "media-cache",
+                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
             },
           ],
         },

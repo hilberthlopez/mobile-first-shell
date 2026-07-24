@@ -2,30 +2,10 @@ import { Banknote, Building2, CalendarClock, CheckCircle2, Wallet } from "lucide
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { CLIENT_LOAN as LOAN, CLIENT_PAYMENTS as PAYMENTS } from "@/services/mockData";
 
 const currency = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-
-const LOAN = {
-  capital: 10_000_000,
-  total: 12_500_000,
-  dailyPayment: 500_000,
-  termDays: 25,
-  paidDays: 12,
-  startDate: "05 nov 2026",
-  endDate: "30 nov 2026",
-};
-
-type PayMethod = "efectivo" | "deposito";
-const PAYMENTS: { id: string; date: string; amount: number; method: PayMethod }[] = [
-  { id: "p12", date: "24 nov 2026", amount: 500_000, method: "efectivo" },
-  { id: "p11", date: "23 nov 2026", amount: 500_000, method: "efectivo" },
-  { id: "p10", date: "22 nov 2026", amount: 500_000, method: "deposito" },
-  { id: "p9", date: "21 nov 2026", amount: 500_000, method: "efectivo" },
-  { id: "p8", date: "20 nov 2026", amount: 500_000, method: "efectivo" },
-  { id: "p7", date: "19 nov 2026", amount: 500_000, method: "deposito" },
-  { id: "p6", date: "18 nov 2026", amount: 500_000, method: "efectivo" },
-];
 
 export function ClientStatement({ userName }: { userName?: string }) {
   const paid = LOAN.paidDays * LOAN.dailyPayment;

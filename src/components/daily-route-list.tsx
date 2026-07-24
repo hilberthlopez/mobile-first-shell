@@ -10,34 +10,13 @@ import {
   DrawerFooter, DrawerHeader, DrawerTitle,
 } from "@/components/ui/drawer";
 import { toast } from "sonner";
-
-type PaymentStatus = "pagado" | "pendiente" | "atrasado";
-type PaymentMethod = "efectivo" | "deposito";
-
-interface RouteClient {
-  id: string;
-  order: number;
-  name: string;
-  business: string;
-  address: string;
-  dailyPayment: number;
-  remainingDays: number;
-  totalDebt: number;
-  status: PaymentStatus;
-}
+import { useDataStore } from "@/store/data-store";
+import type { PaymentMethod, PaymentStatus, RouteClient } from "@/services/mockData";
 
 const currency = (n: number) =>
   new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", maximumFractionDigits: 0,
   }).format(isFinite(n) ? n : 0);
-
-const INITIAL_CLIENTS: RouteClient[] = [
-  { id: "1", order: 1, name: "María González", business: "Tienda La Esquina", address: "Cra 12 #34-56", dailyPayment: 500_000, remainingDays: 18, totalDebt: 9_000_000, status: "pendiente" },
-  { id: "2", order: 2, name: "Carlos Ramírez", business: "Panadería El Trigal", address: "Cll 45 #12-08", dailyPayment: 250_000, remainingDays: 22, totalDebt: 5_500_000, status: "atrasado" },
-  { id: "3", order: 3, name: "Ana Suárez", business: "Papelería Ana", address: "Cra 7 #22-15", dailyPayment: 120_000, remainingDays: 10, totalDebt: 1_200_000, status: "pagado" },
-  { id: "4", order: 4, name: "Jorge Pérez", business: "Ferretería Central", address: "Cll 60 #4-30", dailyPayment: 400_000, remainingDays: 24, totalDebt: 9_600_000, status: "pendiente" },
-  { id: "5", order: 5, name: "Luisa Torres", business: "Cafetería Aroma", address: "Cra 15 #9-11", dailyPayment: 180_000, remainingDays: 15, totalDebt: 2_700_000, status: "pendiente" },
-];
 
 const STATUS_META: Record<PaymentStatus, { label: string; className: string; icon: React.ReactNode }> = {
   pagado: { label: "Pagado", className: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400", icon: <CheckCircle2 className="h-3 w-3" /> },
@@ -46,7 +25,8 @@ const STATUS_META: Record<PaymentStatus, { label: string; className: string; ico
 };
 
 export function DailyRouteList() {
-  const [clients, setClients] = useState<RouteClient[]>(INITIAL_CLIENTS);
+  const clients = useDataStore((s) => s.clients);
+  const registerPaymentAction = useDataStore((s) => s.registerPayment);
   const [selected, setSelected] = useState<RouteClient | null>(null);
   const [amountStr, setAmountStr] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("efectivo");
@@ -72,9 +52,7 @@ export function DailyRouteList() {
       toast.error("Ingresa un valor válido");
       return;
     }
-    setClients((prev) =>
-      prev.map((c) => (c.id === selected.id ? { ...c, status: "pagado" } : c)),
-    );
+    registerPaymentAction(selected.id, amount, method, fullPayoff);
     toast.success(fullPayoff ? "Pago anticipado registrado" : "Pago registrado", {
       description: `${currency(amount)} · ${method === "efectivo" ? "Efectivo" : "Depósito bancario"} · ${selected.name}`,
     });
