@@ -25,11 +25,41 @@ const PAGE_SIZE = 5;
 
 export function LeaderDashboard({ userName, role }: { userName?: string; role?: string }) {
   const [page, setPage] = useState(0);
+  const payments = useDataStore((s) => s.payments);
+  const clients = useDataStore((s) => s.clients);
   const totalPages = Math.ceil(COLLECTORS.length / PAGE_SIZE);
   const pageRows = useMemo(
     () => COLLECTORS.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
     [page],
   );
+
+  const liveCollectedToday = useMemo(() => {
+    const today = new Date().toDateString();
+    return payments
+      .filter((p) => new Date(p.date).toDateString() === today)
+      .reduce((sum, p) => sum + p.amount, 0);
+  }, [payments]);
+
+  const dailyCollected = DASHBOARD_TOTALS.baseDailyCollected + liveCollectedToday;
+  const goalPct = Math.round((dailyCollected / DASHBOARD_TOTALS.goalDaily) * 100);
+  const overdueLive = clients.filter((c) => c.status === "atrasado").length;
+
+  const summary = [
+    { title: "Monto Total Prestado", value: DASHBOARD_TOTALS.totalLent, hint: `${DASHBOARD_TOTALS.activeLoans} préstamos activos`, icon: Wallet, tone: "text-primary" },
+    { title: "Recaudo Diario", value: dailyCollected, hint: `Hoy · ${goalPct}% de la meta${payments.length ? ` · ${payments.length} pagos hoy` : ""}`, icon: TrendingUp, tone: "text-emerald-600 dark:text-emerald-400" },
+    { title: "Capital en Riesgo", value: DASHBOARD_TOTALS.capitalAtRisk, hint: `${DASHBOARD_TOTALS.overdueAccounts + overdueLive} cuentas atrasadas`, icon: AlertTriangle, tone: "text-rose-600 dark:text-rose-400" },
+  ];
+
+  const chartData = useMemo(() => {
+    const base = DAILY_COLLECTIONS.map((d) => ({ ...d }));
+    if (base.length && liveCollectedToday) {
+      base[base.length - 1] = {
+        ...base[base.length - 1],
+        monto: base[base.length - 1].monto + liveCollectedToday,
+      };
+    }
+    return base;
+  }, [liveCollectedToday]);
 
   return (
     <div className="space-y-6">
@@ -43,7 +73,7 @@ export function LeaderDashboard({ userName, role }: { userName?: string; role?: 
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SUMMARY.map((m) => (
+        {summary.map((m) => (
           <Card key={m.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{m.title}</CardTitle>
