@@ -8,8 +8,10 @@ import {
   UsersRound,
   MapPin,
   FileText,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react";
+
 import {
   Sidebar,
   SidebarContent,
@@ -34,18 +36,21 @@ const MENUS: Record<Role, NavItem[]> = {
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Todos los Líderes", url: "/lideres", icon: UserCog },
     { title: "Clientes", url: "/clientes", icon: Users },
+    { title: "Préstamos", url: "/prestamos", icon: HandCoins },
     { title: "Gestión de Ruta", url: "/rutas", icon: RouteIcon },
   ],
   Líder: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Mis Cobradores", url: "/cobradores", icon: UsersRound },
     { title: "Clientes", url: "/clientes", icon: Users },
+    { title: "Préstamos", url: "/prestamos", icon: HandCoins },
     { title: "Gestión de Ruta", url: "/rutas", icon: RouteIcon },
   ],
   Cobrador: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Mi Ruta", url: "/mi-ruta", icon: MapPin },
     { title: "Clientes", url: "/clientes", icon: Users },
+    { title: "Préstamos", url: "/prestamos", icon: HandCoins },
   ],
   Cliente: [
     { title: "Mi Estado de Cuenta", url: "/estado-cuenta", icon: FileText },
