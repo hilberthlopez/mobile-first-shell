@@ -1,5 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Route as RouteIcon, Wallet } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Route as RouteIcon,
+  Wallet,
+  UserCog,
+  UsersRound,
+  MapPin,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,15 +21,42 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAuth, type Role } from "@/context/auth-context";
 
-const items = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Gestión de Ruta", url: "/rutas", icon: RouteIcon },
-];
+interface NavItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+}
+
+const MENUS: Record<Role, NavItem[]> = {
+  Administrador: [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Todos los Líderes", url: "/lideres", icon: UserCog },
+    { title: "Clientes", url: "/clientes", icon: Users },
+    { title: "Gestión de Ruta", url: "/rutas", icon: RouteIcon },
+  ],
+  Líder: [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Mis Cobradores", url: "/cobradores", icon: UsersRound },
+    { title: "Clientes", url: "/clientes", icon: Users },
+    { title: "Gestión de Ruta", url: "/rutas", icon: RouteIcon },
+  ],
+  Cobrador: [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Mi Ruta", url: "/mi-ruta", icon: MapPin },
+    { title: "Clientes", url: "/clientes", icon: Users },
+  ],
+  Cliente: [
+    { title: "Mi Estado de Cuenta", url: "/estado-cuenta", icon: FileText },
+  ],
+};
 
 export function AppSidebar() {
+  const { user } = useAuth();
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
+  const items = user ? MENUS[user.role] : [];
+
   const isActive = (path: string) =>
     path === "/" ? currentPath === "/" : currentPath.startsWith(path);
 
@@ -37,11 +74,11 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
+          <SidebarGroupLabel>{user?.role ?? "Navegación"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
                     <Link to={item.url}>
                       <item.icon className="h-4 w-4" />
