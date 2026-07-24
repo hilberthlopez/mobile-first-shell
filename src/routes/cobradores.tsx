@@ -45,12 +45,25 @@ function CobradoresPage() {
   return (
     <AppLayout allowedRoles={["Líder"]}>
       <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Mis Cobradores</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Activa o desactiva cobradores y reasigna a tus clientes.
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Mis Cobradores</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Crea, activa/desactiva cobradores y reasigna a tus clientes.
+            </p>
+          </div>
+          {user?.id && (
+            <CreateCollectorDialog
+              leaderId={user.id}
+              trigger={
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" /> Nuevo cobrador
+                </Button>
+              }
+            />
+          )}
         </div>
+
 
         <div className="grid gap-4 md:grid-cols-2">
           {myCollectors.map((c) => {
