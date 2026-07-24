@@ -8,53 +8,14 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { COLLECTORS, DAILY_COLLECTIONS, DASHBOARD_TOTALS } from "@/services/mockData";
+import { useDataStore } from "@/store/data-store";
 
 const currency = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
 const compact = (n: number) =>
   new Intl.NumberFormat("es-CO", { notation: "compact", maximumFractionDigits: 1 }).format(n);
-
-const SUMMARY = [
-  { title: "Monto Total Prestado", value: 285_400_000, hint: "42 préstamos activos", icon: Wallet, tone: "text-primary" },
-  { title: "Recaudo Diario", value: 14_780_000, hint: "Hoy · 78% de la meta", icon: TrendingUp, tone: "text-emerald-600 dark:text-emerald-400" },
-  { title: "Capital en Riesgo", value: 18_950_000, hint: "6 cuentas atrasadas", icon: AlertTriangle, tone: "text-rose-600 dark:text-rose-400" },
-];
-
-const DAILY_COLLECTIONS = [
-  { day: "Lun", monto: 12_400_000 },
-  { day: "Mar", monto: 13_800_000 },
-  { day: "Mié", monto: 11_900_000 },
-  { day: "Jue", monto: 15_200_000 },
-  { day: "Vie", monto: 14_780_000 },
-  { day: "Sáb", monto: 16_500_000 },
-  { day: "Dom", monto: 8_300_000 },
-];
-
-interface Collector {
-  id: string;
-  name: string;
-  route: string;
-  activeLoans: number;
-  collected: number;
-  goal: number;
-  overdue: number;
-}
-
-const COLLECTORS: Collector[] = [
-  { id: "1", name: "Andrés Molina", route: "Ruta Norte", activeLoans: 22, collected: 4_200_000, goal: 5_000_000, overdue: 1 },
-  { id: "2", name: "Diana Rojas", route: "Ruta Centro", activeLoans: 18, collected: 3_850_000, goal: 4_000_000, overdue: 0 },
-  { id: "3", name: "Felipe Cano", route: "Ruta Sur", activeLoans: 25, collected: 3_100_000, goal: 5_500_000, overdue: 3 },
-  { id: "4", name: "Marcela Díaz", route: "Ruta Occidente", activeLoans: 15, collected: 2_900_000, goal: 3_200_000, overdue: 1 },
-  { id: "5", name: "Julián Pardo", route: "Ruta Oriente", activeLoans: 20, collected: 3_600_000, goal: 4_500_000, overdue: 2 },
-  { id: "6", name: "Camila Vega", route: "Ruta Norte 2", activeLoans: 17, collected: 3_050_000, goal: 3_800_000, overdue: 0 },
-  { id: "7", name: "Óscar Bermúdez", route: "Ruta Centro 2", activeLoans: 19, collected: 2_700_000, goal: 4_100_000, overdue: 2 },
-  { id: "8", name: "Paola Suárez", route: "Ruta Sur 2", activeLoans: 21, collected: 4_050_000, goal: 4_800_000, overdue: 1 },
-  { id: "9", name: "Ricardo Peña", route: "Ruta Occidente 2", activeLoans: 16, collected: 2_400_000, goal: 3_500_000, overdue: 1 },
-  { id: "10", name: "Sara Ortiz", route: "Ruta Oriente 2", activeLoans: 14, collected: 2_800_000, goal: 3_000_000, overdue: 0 },
-  { id: "11", name: "Tomás Herrera", route: "Ruta Norte 3", activeLoans: 23, collected: 3_900_000, goal: 5_200_000, overdue: 2 },
-  { id: "12", name: "Valentina Cruz", route: "Ruta Centro 3", activeLoans: 18, collected: 3_400_000, goal: 4_000_000, overdue: 1 },
-];
 
 const chartConfig = {
   monto: { label: "Recaudo", color: "hsl(var(--primary))" },
