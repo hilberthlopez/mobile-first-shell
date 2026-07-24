@@ -10,8 +10,9 @@ import {
   DrawerFooter, DrawerHeader, DrawerTitle,
 } from "@/components/ui/drawer";
 import { toast } from "sonner";
-import { useDataStore } from "@/store/data-store";
-import type { PaymentMethod, PaymentStatus, RouteClient } from "@/services/mockData";
+import { useDataStore, buildRouteList, type RouteClientView } from "@/store/data-store";
+import { useAuth } from "@/context/auth-context";
+import type { PaymentMethod, PaymentStatus } from "@/services/mockData";
 
 const currency = (n: number) =>
   new Intl.NumberFormat("es-CO", {
@@ -25,21 +26,36 @@ const STATUS_META: Record<PaymentStatus, { label: string; className: string; ico
 };
 
 export function DailyRouteList() {
+  const { user } = useAuth();
   const clients = useDataStore((s) => s.clients);
+  const loans = useDataStore((s) => s.loans);
+  const payments = useDataStore((s) => s.payments);
   const registerPaymentAction = useDataStore((s) => s.registerPayment);
-  const [selected, setSelected] = useState<RouteClient | null>(null);
+
+  const routeClients = useMemo<RouteClientView[]>(() => {
+    if (!user) return [];
+    let scoped = clients;
+    if (user.role === "Cobrador") {
+      scoped = clients.filter((c) => c.assignedCollectorId === user.id);
+    } else if (user.role === "Líder") {
+      scoped = clients.filter((c) => c.leaderId === user.id);
+    }
+    return buildRouteList(scoped, loans, payments);
+  }, [user, clients, loans, payments]);
+
+  const [selected, setSelected] = useState<RouteClientView | null>(null);
   const [amountStr, setAmountStr] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("efectivo");
 
   const counts = useMemo(() => ({
-    pagado: clients.filter((c) => c.status === "pagado").length,
-    pendiente: clients.filter((c) => c.status === "pendiente").length,
-    atrasado: clients.filter((c) => c.status === "atrasado").length,
-  }), [clients]);
+    pagado: routeClients.filter((c) => c.status === "pagado").length,
+    pendiente: routeClients.filter((c) => c.status === "pendiente").length,
+    atrasado: routeClients.filter((c) => c.status === "atrasado").length,
+  }), [routeClients]);
 
-  const openSheet = (c: RouteClient) => {
+  const openSheet = (c: RouteClientView) => {
     setSelected(c);
-    setAmountStr(String(c.dailyPayment));
+    setAmountStr(String(Math.round(c.dailyPayment)));
     setMethod("efectivo");
   };
 
@@ -52,12 +68,20 @@ export function DailyRouteList() {
       toast.error("Ingresa un valor válido");
       return;
     }
-    registerPaymentAction(selected.id, amount, method, fullPayoff);
+    registerPaymentAction(selected.loanId, amount, method, user?.id, fullPayoff);
     toast.success(fullPayoff ? "Pago anticipado registrado" : "Pago registrado", {
       description: `${currency(amount)} · ${method === "efectivo" ? "Efectivo" : "Depósito bancario"} · ${selected.name}`,
     });
     closeSheet();
   };
+
+  if (!routeClients.length) {
+    return (
+      <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+        No hay clientes asignados para tu ruta actual.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -68,7 +92,7 @@ export function DailyRouteList() {
       </div>
 
       <ul className="space-y-3">
-        {clients.map((c) => {
+        {routeClients.map((c) => {
           const meta = STATUS_META[c.status];
           return (
             <li key={c.id}>

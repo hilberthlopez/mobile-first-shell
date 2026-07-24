@@ -6,14 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ROLES, useAuth, ADMIN_EMAIL, ADMIN_PASSWORD, type Role } from "@/context/auth-context";
+import { useAuth } from "@/context/auth-context";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -26,11 +19,10 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { login, loginWithCredentials, user, hydrated } = useAuth();
+  const { loginWithCredentials, user, hydrated } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(ADMIN_EMAIL);
-  const [password, setPassword] = useState(ADMIN_PASSWORD);
-  const [role, setRole] = useState<Role>("Administrador");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,17 +34,12 @@ function LoginPage() {
     setError(null);
     const result = loginWithCredentials(email, password);
     if (result.ok) {
-      toast.success("Bienvenido, Administrador");
+      toast.success("Bienvenido a CarteraApp");
       navigate({ to: "/", replace: true });
     } else {
       setError(result.error);
       toast.error(result.error);
     }
-  };
-
-  const handleDemoLogin = () => {
-    login(role);
-    navigate({ to: "/", replace: true });
   };
 
   const handleForgotPassword = () => {
@@ -67,7 +54,7 @@ function LoginPage() {
             <Wallet className="h-6 w-6" />
           </div>
           <CardTitle className="text-2xl">Bienvenido a CarteraApp</CardTitle>
-          <p className="text-sm text-muted-foreground">Inicia sesión para continuar.</p>
+          <p className="text-sm text-muted-foreground">Inicia sesión con tus credenciales.</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,27 +95,6 @@ function LoginPage() {
             >
               ¿Olvidaste tu contraseña?
             </button>
-
-            <div className="space-y-2 rounded-lg border border-dashed bg-muted/40 p-3">
-              <Label htmlFor="role" className="text-xs uppercase tracking-wide text-muted-foreground">
-                Acceso rápido por rol (solo desarrollo)
-              </Label>
-              <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-                <SelectTrigger id="role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button type="button" variant="outline" className="w-full" onClick={handleDemoLogin}>
-                Entrar como {role} (demo)
-              </Button>
-            </div>
           </form>
         </CardContent>
       </Card>

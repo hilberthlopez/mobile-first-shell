@@ -1,17 +1,47 @@
+import { useMemo } from "react";
 import { Banknote, Building2, CalendarClock, CheckCircle2, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { CLIENT_LOAN as LOAN, CLIENT_PAYMENTS as PAYMENTS } from "@/services/mockData";
+import { useAuth } from "@/context/auth-context";
+import { paidForLoan, useDataStore } from "@/store/data-store";
 
 const currency = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+
 export function ClientStatement({ userName }: { userName?: string }) {
-  const paid = LOAN.paidDays * LOAN.dailyPayment;
-  const balance = LOAN.total - paid;
-  const progress = Math.round((LOAN.paidDays / LOAN.termDays) * 100);
-  const remainingDays = LOAN.termDays - LOAN.paidDays;
+  const { user } = useAuth();
+  const loans = useDataStore((s) => s.loans);
+  const payments = useDataStore((s) => s.payments);
+
+  const loan = useMemo(
+    () => (user?.clientId ? loans.find((l) => l.clientId === user.clientId) : undefined),
+    [loans, user],
+  );
+  const clientPayments = useMemo(
+    () => (loan ? payments.filter((p) => p.loanId === loan.id) : []),
+    [payments, loan],
+  );
+
+  if (!loan) {
+    return (
+      <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+        No hay un préstamo asociado a tu cuenta. Contacta a tu líder.
+      </div>
+    );
+  }
+
+  const paid = paidForLoan(payments, loan.id);
+  const balance = Math.max(0, loan.total - paid);
+  const paidDays = Math.floor(paid / loan.dailyPayment);
+  const progress = Math.min(100, Math.round((paidDays / loan.termDays) * 100));
+  const remainingDays = Math.max(0, loan.termDays - paidDays);
+  const start = new Date(loan.startDate);
+  const end = new Date(start);
+  end.setDate(end.getDate() + loan.termDays);
 
   return (
     <div className="space-y-6">
@@ -28,7 +58,7 @@ export function ClientStatement({ userName }: { userName?: string }) {
         <CardHeader>
           <CardTitle className="text-lg">Progreso de tu préstamo</CardTitle>
           <CardDescription>
-            {LOAN.paidDays} de {LOAN.termDays} cuotas pagadas · faltan {remainingDays} días
+            {paidDays} de {loan.termDays} cuotas pagadas · faltan {remainingDays} días
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -36,7 +66,7 @@ export function ClientStatement({ userName }: { userName?: string }) {
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-3xl font-bold text-primary">{progress}%</span>
               <span className="text-xs text-muted-foreground">
-                {LOAN.startDate} → {LOAN.endDate}
+                {fmtDate(start.toISOString())} → {fmtDate(end.toISOString())}
               </span>
             </div>
             <Progress value={progress} className="h-3" />
@@ -45,17 +75,17 @@ export function ClientStatement({ userName }: { userName?: string }) {
           <div className="grid gap-3 sm:grid-cols-3">
             <StatBox icon={<Wallet className="h-4 w-4" />} label="Saldo actual" value={currency(balance)} tone="text-primary" />
             <StatBox icon={<CheckCircle2 className="h-4 w-4" />} label="Ya pagado" value={currency(paid)} tone="text-emerald-600 dark:text-emerald-400" />
-            <StatBox icon={<CalendarClock className="h-4 w-4" />} label="Cuota diaria" value={currency(LOAN.dailyPayment)} />
+            <StatBox icon={<CalendarClock className="h-4 w-4" />} label="Cuota diaria" value={currency(loan.dailyPayment)} />
           </div>
 
           <div className="rounded-lg border bg-muted/40 p-3 text-sm">
             <div className="flex justify-between py-1">
               <span className="text-muted-foreground">Capital prestado</span>
-              <span className="font-medium">{currency(LOAN.capital)}</span>
+              <span className="font-medium">{currency(loan.capital)}</span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-muted-foreground">Total a pagar</span>
-              <span className="font-medium">{currency(LOAN.total)}</span>
+              <span className="font-medium">{currency(loan.total)}</span>
             </div>
           </div>
         </CardContent>
@@ -67,25 +97,29 @@ export function ClientStatement({ userName }: { userName?: string }) {
           <CardDescription>Tus últimos abonos registrados</CardDescription>
         </CardHeader>
         <CardContent>
-          <ol className="relative space-y-4 border-l-2 border-border pl-5">
-            {PAYMENTS.map((p) => (
-              <li key={p.id} className="relative">
-                <span className="absolute -left-[27px] top-1 grid h-5 w-5 place-items-center rounded-full bg-emerald-500 text-white">
-                  <CheckCircle2 className="h-3 w-3" />
-                </span>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-lg border bg-card p-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{currency(p.amount)}</p>
-                    <p className="text-xs text-muted-foreground">{p.date}</p>
+          {clientPayments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aún no hay pagos registrados.</p>
+          ) : (
+            <ol className="relative space-y-4 border-l-2 border-border pl-5">
+              {clientPayments.map((p) => (
+                <li key={p.id} className="relative">
+                  <span className="absolute -left-[27px] top-1 grid h-5 w-5 place-items-center rounded-full bg-emerald-500 text-white">
+                    <CheckCircle2 className="h-3 w-3" />
+                  </span>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-lg border bg-card p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{currency(p.amount)}</p>
+                      <p className="text-xs text-muted-foreground">{fmtDate(p.date)}</p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 gap-1">
+                      {p.method === "efectivo" ? <Banknote className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
+                      {p.method === "efectivo" ? "Efectivo" : "Depósito"}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="shrink-0 gap-1">
-                    {p.method === "efectivo" ? <Banknote className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
-                    {p.method === "efectivo" ? "Efectivo" : "Depósito"}
-                  </Badge>
-                </div>
-              </li>
-            ))}
-          </ol>
+                </li>
+              ))}
+            </ol>
+          )}
         </CardContent>
       </Card>
     </div>
