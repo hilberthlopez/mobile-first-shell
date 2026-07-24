@@ -1,49 +1,144 @@
 import { create } from "zustand";
 import {
-  ROUTE_CLIENTS,
+  CLIENTS,
+  LOANS,
+  SEED_PAYMENTS,
+  USERS,
+  type Client,
+  type Loan,
+  type Payment,
   type PaymentMethod,
-  type PaymentRecord,
-  type RouteClient,
+  type PaymentStatus,
+  type User,
 } from "@/services/mockData";
 
+export interface RouteClientView {
+  id: string;               // client id
+  loanId: string;
+  order: number;
+  name: string;
+  business: string;
+  address: string;
+  dailyPayment: number;
+  totalDebt: number;
+  remainingDays: number;
+  status: PaymentStatus;
+  assignedCollectorId?: string;
+  leaderId: string;
+}
+
 interface DataState {
-  clients: RouteClient[];
-  payments: PaymentRecord[];
+  users: User[];
+  clients: Client[];
+  loans: Loan[];
+  payments: Payment[];
   registerPayment: (
-    clientId: string,
+    loanId: string,
     amount: number,
     method: PaymentMethod,
+    collectorId?: string,
     fullPayoff?: boolean,
   ) => void;
+  toggleCollectorActive: (userId: string) => void;
+  assignClientToCollector: (clientId: string, collectorId: string) => void;
 }
 
 export const useDataStore = create<DataState>((set) => ({
-  clients: ROUTE_CLIENTS,
-  payments: [],
-  registerPayment: (clientId, amount, method, fullPayoff = false) =>
+  users: USERS,
+  clients: CLIENTS,
+  loans: LOANS,
+  payments: SEED_PAYMENTS,
+  registerPayment: (loanId, amount, method, collectorId, fullPayoff = false) =>
     set((state) => {
-      const client = state.clients.find((c) => c.id === clientId);
-      if (!client) return state;
-      const record: PaymentRecord = {
-        id: `pay_${Date.now()}_${clientId}`,
-        clientId,
-        clientName: client.name,
+      const loan = state.loans.find((l) => l.id === loanId);
+      if (!loan) return state;
+      const record: Payment = {
+        id: `pay_${Date.now()}_${loanId}`,
+        loanId,
+        clientId: loan.clientId,
+        collectorId,
         amount,
         method,
         date: new Date().toISOString(),
+        fullPayoff,
       };
-      return {
-        clients: state.clients.map((c) =>
-          c.id === clientId
-            ? {
-                ...c,
-                status: "pagado",
-                totalDebt: fullPayoff ? 0 : Math.max(0, c.totalDebt - amount),
-                remainingDays: fullPayoff ? 0 : c.remainingDays,
-              }
-            : c,
-        ),
-        payments: [record, ...state.payments],
-      };
+      return { payments: [record, ...state.payments] };
     }),
+  toggleCollectorActive: (userId) =>
+    set((state) => ({
+      users: state.users.map((u) =>
+        u.id === userId && u.role === "Cobrador" ? { ...u, isActive: !u.isActive } : u,
+      ),
+    })),
+  assignClientToCollector: (clientId, collectorId) =>
+    set((state) => ({
+      clients: state.clients.map((c) =>
+        c.id === clientId ? { ...c, assignedCollectorId: collectorId } : c,
+      ),
+    })),
 }));
+
+// ---------- Derived helpers ----------
+
+const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
+
+export function paidForLoan(payments: Payment[], loanId: string) {
+  return payments.filter((p) => p.loanId === loanId).reduce((s, p) => s + p.amount, 0);
+}
+
+export function deriveRouteClient(
+  client: Client,
+  loan: Loan,
+  payments: Payment[],
+): RouteClientView {
+  const paid = paidForLoan(payments, loan.id);
+  const totalDebt = Math.max(0, loan.total - paid);
+  const paidToday = payments
+    .filter((p) => p.loanId === loan.id && isToday(p.date))
+    .reduce((s, p) => s + p.amount, 0);
+  const paidCuotas = Math.floor(paid / loan.dailyPayment);
+  const remainingDays = Math.max(0, loan.termDays - paidCuotas);
+
+  let status: PaymentStatus;
+  if (totalDebt === 0) status = "pagado";
+  else if (paidToday >= loan.dailyPayment) status = "pagado";
+  else if (loan.initialStatus === "atrasado" && paidToday === 0) status = "atrasado";
+  else status = "pendiente";
+
+  return {
+    id: client.id,
+    loanId: loan.id,
+    order: client.order,
+    name: client.name,
+    business: client.business,
+    address: client.address,
+    dailyPayment: loan.dailyPayment,
+    totalDebt,
+    remainingDays,
+    status,
+    assignedCollectorId: client.assignedCollectorId,
+    leaderId: client.leaderId,
+  };
+}
+
+export interface DataScope {
+  clientIds?: string[];   // undefined = todos
+}
+
+export function buildRouteList(
+  clients: Client[],
+  loans: Loan[],
+  payments: Payment[],
+  scope: DataScope = {},
+): RouteClientView[] {
+  const wanted = scope.clientIds ? new Set(scope.clientIds) : null;
+  return clients
+    .filter((c) => (wanted ? wanted.has(c.id) : true))
+    .map((c) => {
+      const loan = loans.find((l) => l.clientId === c.id);
+      if (!loan) return null;
+      return deriveRouteClient(c, loan, payments);
+    })
+    .filter((x): x is RouteClientView => x !== null)
+    .sort((a, b) => a.order - b.order);
+}

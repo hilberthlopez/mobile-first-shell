@@ -1,22 +1,20 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, LogOut, RefreshCw } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "@tanstack/react-router";
-import { ROLES, useAuth, type Role } from "@/context/auth-context";
+import { useAuth } from "@/context/auth-context";
 
 export function Topbar() {
-  const { user, logout, setRole } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const initials = user
@@ -59,19 +57,10 @@ export function Topbar() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel className="flex items-center gap-2">
-            <RefreshCw className="h-3.5 w-3.5" /> Cambiar rol (demo)
+          <DropdownMenuLabel className="flex flex-col">
+            <span className="text-sm font-medium">{user?.name}</span>
+            <span className="text-xs text-muted-foreground">{user?.email}</span>
           </DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={user?.role}
-            onValueChange={(v) => setRole(v as Role)}
-          >
-            {ROLES.map((r) => (
-              <DropdownMenuRadioItem key={r} value={r}>
-                {r}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" /> Cerrar sesión

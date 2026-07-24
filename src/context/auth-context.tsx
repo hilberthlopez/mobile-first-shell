@@ -1,22 +1,20 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { USERS, ADMIN_EMAIL, ADMIN_PASSWORD, type Role, type User } from "@/services/mockData";
 
-export type Role = "Administrador" | "Líder" | "Cobrador" | "Cliente";
-
+export type { Role };
 export const ROLES: Role[] = ["Administrador", "Líder", "Cobrador", "Cliente"];
+export { ADMIN_EMAIL, ADMIN_PASSWORD };
 
-export interface User {
-  name: string;
-  email: string;
-  role: Role;
-}
+export type SessionUser = Omit<User, "password">;
 
 interface AuthContextValue {
-  user: User | null;
+  user: SessionUser | null;
   hydrated: boolean;
-  login: (role: Role) => void;
-  loginWithCredentials: (email: string, password: string) => { ok: true } | { ok: false; error: string };
+  loginWithCredentials: (
+    email: string,
+    password: string,
+  ) => { ok: true } | { ok: false; error: string };
   logout: () => void;
-  setRole: (role: Role) => void;
   hasRole: (role: Role) => boolean;
   hasAnyRole: (roles: Role[]) => boolean;
 }
@@ -24,23 +22,8 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 const STORAGE_KEY = "carteraapp.auth";
 
-export const ADMIN_EMAIL = "hilberth.valderrama@gmail.com";
-export const ADMIN_PASSWORD = "987654";
-
-const demoUserFor = (role: Role): User => ({
-  name: `Demo ${role}`,
-  email: `${role.toLowerCase().replace("í", "i")}@carteraapp.dev`,
-  role,
-});
-
-const adminUser: User = {
-  name: "Administrador Global",
-  email: ADMIN_EMAIL,
-  role: "Administrador",
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -62,24 +45,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     user,
     hydrated,
-    login: (role) => setUser(demoUserFor(role)),
     loginWithCredentials: (email, password) => {
       const normalized = email.trim().toLowerCase();
-      if (normalized === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        setUser(adminUser);
-        return { ok: true };
+      const found = USERS.find((u) => u.email.toLowerCase() === normalized);
+      if (!found || found.password !== password) {
+        return { ok: false, error: "Credenciales inválidas. Contacte al administrador del sistema." };
       }
-      return { ok: false, error: "Credenciales inválidas. Contacte al administrador del sistema." };
+      if (!found.isActive) {
+        return { ok: false, error: "Usuario desactivado. Contacte al administrador del sistema." };
+      }
+      const { password: _pw, ...session } = found;
+      setUser(session);
+      return { ok: true };
     },
     logout: () => setUser(null),
-    setRole: (role) => setUser((prev) => (prev ? { ...prev, role } : demoUserFor(role))),
     hasRole: (role) => user?.role === role,
     hasAnyRole: (roles) => (user ? roles.includes(user.role) : false),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
