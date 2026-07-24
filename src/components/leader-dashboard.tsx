@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { TrendingUp, Wallet, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { TrendingUp, Wallet, AlertTriangle, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { CreateLeaderDialog } from "@/components/create-leader-dialog";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,16 +128,30 @@ export function LeaderDashboard({ userName, role }: { userName?: string; role?: 
     [rows, page],
   );
 
+  const isAdmin = user?.role === "Administrador";
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          ¡Bienvenido, {userName}! 👋
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Resumen de actividad para tu rol de <span className="font-medium">{role}</span>.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            ¡Bienvenido, {userName}! 👋
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Resumen de actividad para tu rol de <span className="font-medium">{role}</span>.
+          </p>
+        </div>
+        {isAdmin && (
+          <CreateLeaderDialog
+            trigger={
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" /> Crear Líder
+              </Button>
+            }
+          />
+        )}
       </div>
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {summary.map((m) => (
