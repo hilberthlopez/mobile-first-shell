@@ -8,8 +8,9 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { COLLECTORS, DAILY_COLLECTIONS, DASHBOARD_TOTALS } from "@/services/mockData";
-import { useDataStore } from "@/store/data-store";
+import { DAILY_COLLECTIONS } from "@/services/mockData";
+import { buildRouteList, paidForLoan, useDataStore } from "@/store/data-store";
+import { useAuth } from "@/context/auth-context";
 
 const currency = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -24,42 +25,106 @@ const chartConfig = {
 const PAGE_SIZE = 5;
 
 export function LeaderDashboard({ userName, role }: { userName?: string; role?: string }) {
+  const { user } = useAuth();
   const [page, setPage] = useState(0);
-  const payments = useDataStore((s) => s.payments);
+  const users = useDataStore((s) => s.users);
   const clients = useDataStore((s) => s.clients);
-  const totalPages = Math.ceil(COLLECTORS.length / PAGE_SIZE);
-  const pageRows = useMemo(
-    () => COLLECTORS.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
-    [page],
+  const loans = useDataStore((s) => s.loans);
+  const payments = useDataStore((s) => s.payments);
+
+  // Alcance: Admin ve todo; Líder ve solo su equipo.
+  const scopedCollectors = useMemo(() => {
+    const all = users.filter((u) => u.role === "Cobrador");
+    return user?.role === "Líder" ? all.filter((c) => c.leaderId === user.id) : all;
+  }, [users, user]);
+
+  const scopedClients = useMemo(() => {
+    return user?.role === "Líder"
+      ? clients.filter((c) => c.leaderId === user.id)
+      : clients;
+  }, [clients, user]);
+
+  const scopedLoans = useMemo(
+    () => loans.filter((l) => scopedClients.some((c) => c.id === l.clientId)),
+    [loans, scopedClients],
   );
 
-  const liveCollectedToday = useMemo(() => {
-    const today = new Date().toDateString();
-    return payments
-      .filter((p) => new Date(p.date).toDateString() === today)
-      .reduce((sum, p) => sum + p.amount, 0);
-  }, [payments]);
+  const scopedPayments = useMemo(
+    () => payments.filter((p) => scopedLoans.some((l) => l.id === p.loanId)),
+    [payments, scopedLoans],
+  );
 
-  const dailyCollected = DASHBOARD_TOTALS.baseDailyCollected + liveCollectedToday;
-  const goalPct = Math.round((dailyCollected / DASHBOARD_TOTALS.goalDaily) * 100);
-  const overdueLive = clients.filter((c) => c.status === "atrasado").length;
+  const routeView = useMemo(
+    () => buildRouteList(scopedClients, scopedLoans, scopedPayments),
+    [scopedClients, scopedLoans, scopedPayments],
+  );
+
+  const totalLent = scopedLoans.reduce((s, l) => s + l.capital, 0);
+  const outstanding = scopedLoans.reduce(
+    (s, l) => s + Math.max(0, l.total - paidForLoan(scopedPayments, l.id)),
+    0,
+  );
+  const capitalAtRisk = routeView
+    .filter((c) => c.status === "atrasado")
+    .reduce((s, c) => s + c.totalDebt, 0);
+  const overdueCount = routeView.filter((c) => c.status === "atrasado").length;
+  const activeLoans = scopedLoans.filter(
+    (l) => paidForLoan(scopedPayments, l.id) < l.total,
+  ).length;
+
+  const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
+  const dailyCollected = scopedPayments
+    .filter((p) => isToday(p.date))
+    .reduce((s, p) => s + p.amount, 0);
+  const goalDaily = scopedCollectors.reduce((s, c) => s + (c.goal ?? 0), 0);
+  const goalPct = goalDaily ? Math.round((dailyCollected / goalDaily) * 100) : 0;
 
   const summary = [
-    { title: "Monto Total Prestado", value: DASHBOARD_TOTALS.totalLent, hint: `${DASHBOARD_TOTALS.activeLoans} préstamos activos`, icon: Wallet, tone: "text-primary" },
-    { title: "Recaudo Diario", value: dailyCollected, hint: `Hoy · ${goalPct}% de la meta${payments.length ? ` · ${payments.length} pagos hoy` : ""}`, icon: TrendingUp, tone: "text-emerald-600 dark:text-emerald-400" },
-    { title: "Capital en Riesgo", value: DASHBOARD_TOTALS.capitalAtRisk, hint: `${DASHBOARD_TOTALS.overdueAccounts + overdueLive} cuentas atrasadas`, icon: AlertTriangle, tone: "text-rose-600 dark:text-rose-400" },
+    { title: "Monto Total Prestado", value: totalLent, hint: `${activeLoans} préstamos activos · saldo ${currency(outstanding)}`, icon: Wallet, tone: "text-primary" },
+    { title: "Recaudo Diario", value: dailyCollected, hint: goalDaily ? `Hoy · ${goalPct}% de la meta (${currency(goalDaily)})` : "Sin meta configurada", icon: TrendingUp, tone: "text-emerald-600 dark:text-emerald-400" },
+    { title: "Capital en Riesgo", value: capitalAtRisk, hint: `${overdueCount} cuentas atrasadas`, icon: AlertTriangle, tone: "text-rose-600 dark:text-rose-400" },
   ];
 
   const chartData = useMemo(() => {
     const base = DAILY_COLLECTIONS.map((d) => ({ ...d }));
-    if (base.length && liveCollectedToday) {
+    if (base.length && dailyCollected) {
       base[base.length - 1] = {
         ...base[base.length - 1],
-        monto: base[base.length - 1].monto + liveCollectedToday,
+        monto: base[base.length - 1].monto + dailyCollected,
       };
     }
     return base;
-  }, [liveCollectedToday]);
+  }, [dailyCollected]);
+
+  // Filas del leaderboard: derivadas por cobrador
+  const rows = useMemo(() => {
+    return scopedCollectors.map((col) => {
+      const colClients = scopedClients.filter((c) => c.assignedCollectorId === col.id);
+      const colLoans = scopedLoans.filter((l) => colClients.some((c) => c.id === l.clientId));
+      const collectedToday = scopedPayments
+        .filter((p) => p.collectorId === col.id && isToday(p.date))
+        .reduce((s, p) => s + p.amount, 0);
+      const overdue = routeView.filter(
+        (r) => r.assignedCollectorId === col.id && r.status === "atrasado",
+      ).length;
+      return {
+        id: col.id,
+        name: col.name,
+        route: col.route ?? "—",
+        isActive: col.isActive,
+        activeLoans: colLoans.length,
+        collected: collectedToday,
+        goal: col.goal ?? 0,
+        overdue,
+      };
+    });
+  }, [scopedCollectors, scopedClients, scopedLoans, scopedPayments, routeView]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageRows = useMemo(
+    () => rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [rows, page],
+  );
 
   return (
     <div className="space-y-6">
@@ -121,13 +186,14 @@ export function LeaderDashboard({ userName, role }: { userName?: string; role?: 
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="w-full overflow-x-auto rounded-md border">
-            <Table className="min-w-[720px]">
+            <Table className="min-w-[760px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Cobrador</TableHead>
                   <TableHead>Ruta</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Préstamos</TableHead>
-                  <TableHead className="text-right">Recaudado</TableHead>
+                  <TableHead className="text-right">Recaudo hoy</TableHead>
                   <TableHead className="text-right">Meta</TableHead>
                   <TableHead className="text-right">% Meta</TableHead>
                   <TableHead className="text-right">Atrasos</TableHead>
@@ -135,15 +201,20 @@ export function LeaderDashboard({ userName, role }: { userName?: string; role?: 
               </TableHeader>
               <TableBody>
                 {pageRows.map((c) => {
-                  const pct = Math.round((c.collected / c.goal) * 100);
+                  const pct = c.goal ? Math.round((c.collected / c.goal) * 100) : 0;
                   const tone =
                     pct >= 90 ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400"
-                    : pct >= 70 ? "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400"
+                    : pct >= 50 ? "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400"
                     : "bg-rose-500/15 text-rose-700 border-rose-500/30 dark:text-rose-400";
                   return (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.name}</TableCell>
                       <TableCell className="text-muted-foreground">{c.route}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={c.isActive ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400" : "bg-muted text-muted-foreground"}>
+                          {c.isActive ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">{c.activeLoans}</TableCell>
                       <TableCell className="text-right">{currency(c.collected)}</TableCell>
                       <TableCell className="text-right text-muted-foreground">{currency(c.goal)}</TableCell>
@@ -154,13 +225,20 @@ export function LeaderDashboard({ userName, role }: { userName?: string; role?: 
                     </TableRow>
                   );
                 })}
+                {!pageRows.length && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                      No hay cobradores en tu alcance.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
 
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="text-muted-foreground">
-              Página {page + 1} de {totalPages} · {COLLECTORS.length} cobradores
+              Página {page + 1} de {totalPages} · {rows.length} cobradores
             </span>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
