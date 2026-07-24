@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { UserPlus } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +10,12 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { CreateCollectorDialog } from "@/components/create-collector-dialog";
 import { useDataStore } from "@/store/data-store";
 import { useAuth } from "@/context/auth-context";
-import { useMemo } from "react";
 
 export const Route = createFileRoute("/cobradores")({
   head: () => ({ meta: [{ title: "Mis Cobradores — CarteraApp" }] }),
@@ -35,6 +40,7 @@ function CobradoresPage() {
     () => clients.filter((c) => c.leaderId === user?.id),
     [clients, user],
   );
+
 
   return (
     <AppLayout allowedRoles={["Líder"]}>
