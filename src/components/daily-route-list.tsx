@@ -25,7 +25,8 @@ const STATUS_META: Record<PaymentStatus, { label: string; className: string; ico
 };
 
 export function DailyRouteList() {
-  const [clients, setClients] = useState<RouteClient[]>(INITIAL_CLIENTS);
+  const clients = useDataStore((s) => s.clients);
+  const registerPaymentAction = useDataStore((s) => s.registerPayment);
   const [selected, setSelected] = useState<RouteClient | null>(null);
   const [amountStr, setAmountStr] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("efectivo");
@@ -51,9 +52,7 @@ export function DailyRouteList() {
       toast.error("Ingresa un valor válido");
       return;
     }
-    setClients((prev) =>
-      prev.map((c) => (c.id === selected.id ? { ...c, status: "pagado" } : c)),
-    );
+    registerPaymentAction(selected.id, amount, method, fullPayoff);
     toast.success(fullPayoff ? "Pago anticipado registrado" : "Pago registrado", {
       description: `${currency(amount)} · ${method === "efectivo" ? "Efectivo" : "Depósito bancario"} · ${selected.name}`,
     });
