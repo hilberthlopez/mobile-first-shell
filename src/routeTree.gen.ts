@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RutasRouteImport } from './routes/rutas'
+import { Route as PrestamosRouteImport } from './routes/prestamos'
 import { Route as MiRutaRouteImport } from './routes/mi-ruta'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LideresRouteImport } from './routes/lideres'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const RutasRoute = RutasRouteImport.update({
   id: '/rutas',
   path: '/rutas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrestamosRoute = PrestamosRouteImport.update({
+  id: '/prestamos',
+  path: '/prestamos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MiRutaRoute = MiRutaRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/lideres': typeof LideresRoute
   '/login': typeof LoginRoute
   '/mi-ruta': typeof MiRutaRoute
+  '/prestamos': typeof PrestamosRoute
   '/rutas': typeof RutasRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/lideres': typeof LideresRoute
   '/login': typeof LoginRoute
   '/mi-ruta': typeof MiRutaRoute
+  '/prestamos': typeof PrestamosRoute
   '/rutas': typeof RutasRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/lideres': typeof LideresRoute
   '/login': typeof LoginRoute
   '/mi-ruta': typeof MiRutaRoute
+  '/prestamos': typeof PrestamosRoute
   '/rutas': typeof RutasRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/lideres'
     | '/login'
     | '/mi-ruta'
+    | '/prestamos'
     | '/rutas'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/lideres'
     | '/login'
     | '/mi-ruta'
+    | '/prestamos'
     | '/rutas'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/lideres'
     | '/login'
     | '/mi-ruta'
+    | '/prestamos'
     | '/rutas'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   LideresRoute: typeof LideresRoute
   LoginRoute: typeof LoginRoute
   MiRutaRoute: typeof MiRutaRoute
+  PrestamosRoute: typeof PrestamosRoute
   RutasRoute: typeof RutasRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/rutas'
       fullPath: '/rutas'
       preLoaderRoute: typeof RutasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prestamos': {
+      id: '/prestamos'
+      path: '/prestamos'
+      fullPath: '/prestamos'
+      preLoaderRoute: typeof PrestamosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mi-ruta': {
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   LideresRoute: LideresRoute,
   LoginRoute: LoginRoute,
   MiRutaRoute: MiRutaRoute,
+  PrestamosRoute: PrestamosRoute,
   RutasRoute: RutasRoute,
 }
 export const routeTree = rootRouteImport
