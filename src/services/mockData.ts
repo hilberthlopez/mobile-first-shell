@@ -21,6 +21,13 @@ export interface User {
   goal?: number;
   /** Cliente → link to the Client record. */
   clientId?: string;
+  // Perfil extendido (usado al crear cobradores).
+  firstName?: string;
+  lastName?: string;
+  cedula?: string;
+  birthDate?: string;
+  address?: string;
+  phone2?: string;
 }
 
 export interface Client {

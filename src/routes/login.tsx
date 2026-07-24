@@ -18,6 +18,12 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+function landingFor(role: string) {
+  if (role === "Cobrador") return "/mi-ruta" as const;
+  if (role === "Cliente") return "/estado-cuenta" as const;
+  return "/" as const;
+}
+
 function LoginPage() {
   const { loginWithCredentials, user, hydrated } = useAuth();
   const navigate = useNavigate();
@@ -26,7 +32,7 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (hydrated && user) navigate({ to: "/", replace: true });
+    if (hydrated && user) navigate({ to: landingFor(user.role), replace: true });
   }, [hydrated, user, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,12 +41,14 @@ function LoginPage() {
     const result = loginWithCredentials(email, password);
     if (result.ok) {
       toast.success("Bienvenido a CarteraApp");
-      navigate({ to: "/", replace: true });
+      // Re-lee usuario recién autenticado desde localStorage no es necesario:
+      // el efecto de arriba redirige cuando `user` cambia.
     } else {
       setError(result.error);
       toast.error(result.error);
     }
   };
+
 
   const handleForgotPassword = () => {
     toast.message("Contacte al administrador del sistema para recuperar su acceso.");

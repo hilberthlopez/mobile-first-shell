@@ -137,3 +137,11 @@ TypeScript strict. Backend: ninguno (mock relacional en memoria).
 Al terminar cualquier tarea que cree/elimine rutas, cambie roles/reglas de
 negocio o modifique el modelo de datos, actualiza las secciones
 correspondientes **antes** de reportar la tarea como completada.
+
+## Actualización — Interfaces RBAC + gestión de usuarios
+
+- **Admin**: botón "Crear Líder" en el Dashboard y en `/lideres` (modal). Tabla de líderes con filas expandibles que muestran sus cobradores (cédula, ruta, teléfono, estado).
+- **Líder**: en `/cobradores`, botón "Nuevo cobrador" que abre un modal con los campos obligatorios: `birthDate`, `cedula`, `firstName`, `lastName`, `address`, `phone`, `phone2`. Contraseña inicial = cédula. Cada tarjeta mantiene un `Switch` para alternar `isActive`.
+- **Cobrador**: acceso restringido — el sidebar solo muestra "Mi Ruta". Rutas `/`, `/clientes`, `/prestamos`, `/rutas` ahora exigen rol Administrador o Líder; el login redirige al cobrador directamente a `/mi-ruta`. Los cobradores desactivados no pueden iniciar sesión (validado en `auth-context`).
+- **Store**: nuevas acciones `createLeader` y `createCollector` en `src/store/data-store.ts`; `User` extendido con `firstName`, `lastName`, `cedula`, `birthDate`, `address`, `phone2`.
+- **Visibilidad**: Líder solo consulta cobradores y clientes con su `leaderId` (filtros ya aplicados en dashboard y `/cobradores`). Admin sigue viendo todo.

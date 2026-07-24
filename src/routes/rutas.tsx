@@ -12,7 +12,7 @@ export const Route = createFileRoute("/rutas")({
     ],
   }),
   component: () => (
-    <AppLayout allowedRoles={["Administrador", "Líder", "Cobrador"]}>
+    <AppLayout allowedRoles={["Administrador", "Líder"]}>
       <div className="mx-auto w-full max-w-3xl p-4 sm:p-6">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Gestión de Ruta</h1>
         <p className="mt-1 text-sm text-muted-foreground">Clientes a visitar hoy, en orden secuencial.</p>

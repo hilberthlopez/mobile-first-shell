@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { UserPlus } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +10,12 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { CreateCollectorDialog } from "@/components/create-collector-dialog";
 import { useDataStore } from "@/store/data-store";
 import { useAuth } from "@/context/auth-context";
-import { useMemo } from "react";
 
 export const Route = createFileRoute("/cobradores")({
   head: () => ({ meta: [{ title: "Mis Cobradores — CarteraApp" }] }),
@@ -36,15 +41,29 @@ function CobradoresPage() {
     [clients, user],
   );
 
+
   return (
     <AppLayout allowedRoles={["Líder"]}>
       <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Mis Cobradores</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Activa o desactiva cobradores y reasigna a tus clientes.
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Mis Cobradores</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Crea, activa/desactiva cobradores y reasigna a tus clientes.
+            </p>
+          </div>
+          {user?.id && (
+            <CreateCollectorDialog
+              leaderId={user.id}
+              trigger={
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" /> Nuevo cobrador
+                </Button>
+              }
+            />
+          )}
         </div>
+
 
         <div className="grid gap-4 md:grid-cols-2">
           {myCollectors.map((c) => {

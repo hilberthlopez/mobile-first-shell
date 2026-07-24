@@ -27,6 +27,27 @@ export interface RouteClientView {
   leaderId: string;
 }
 
+interface CreateLeaderInput {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+}
+
+interface CreateCollectorInput {
+  leaderId: string;
+  firstName: string;
+  lastName: string;
+  cedula: string;
+  birthDate: string;
+  address: string;
+  phone: string;
+  phone2: string;
+  email?: string;
+  route?: string;
+  goal?: number;
+}
+
 interface DataState {
   users: User[];
   clients: Client[];
@@ -41,9 +62,11 @@ interface DataState {
   ) => void;
   toggleCollectorActive: (userId: string) => void;
   assignClientToCollector: (clientId: string, collectorId: string) => void;
+  createLeader: (input: CreateLeaderInput) => { ok: true; id: string } | { ok: false; error: string };
+  createCollector: (input: CreateCollectorInput) => { ok: true; id: string } | { ok: false; error: string };
 }
 
-export const useDataStore = create<DataState>((set) => ({
+export const useDataStore = create<DataState>((set, get) => ({
   users: USERS,
   clients: CLIENTS,
   loans: LOANS,
@@ -76,6 +99,55 @@ export const useDataStore = create<DataState>((set) => ({
         c.id === clientId ? { ...c, assignedCollectorId: collectorId } : c,
       ),
     })),
+  createLeader: (input) => {
+    const email = input.email.trim().toLowerCase();
+    if (get().users.some((u) => u.email.toLowerCase() === email)) {
+      return { ok: false, error: "Ya existe un usuario con ese correo." };
+    }
+    const id = `u_l_${Date.now()}`;
+    const newLeader: User = {
+      id,
+      name: input.name.trim(),
+      email,
+      password: input.password,
+      role: "Líder",
+      isActive: true,
+      phone: input.phone,
+    };
+    set((state) => ({ users: [...state.users, newLeader] }));
+    return { ok: true, id };
+  },
+  createCollector: (input) => {
+    const email = (input.email?.trim() || `${input.cedula}@carteraapp.dev`).toLowerCase();
+    if (get().users.some((u) => u.email.toLowerCase() === email)) {
+      return { ok: false, error: "Ya existe un usuario con ese correo." };
+    }
+    if (get().users.some((u) => u.cedula === input.cedula)) {
+      return { ok: false, error: "Ya existe un usuario con esa cédula." };
+    }
+    const id = `u_c_${Date.now()}`;
+    const fullName = `${input.firstName.trim()} ${input.lastName.trim()}`.trim();
+    const newCollector: User = {
+      id,
+      name: fullName,
+      email,
+      password: input.cedula, // contraseña temporal = cédula
+      role: "Cobrador",
+      isActive: true,
+      leaderId: input.leaderId,
+      route: input.route ?? "Sin ruta asignada",
+      goal: input.goal ?? 0,
+      phone: input.phone,
+      phone2: input.phone2,
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      cedula: input.cedula,
+      birthDate: input.birthDate,
+      address: input.address,
+    };
+    set((state) => ({ users: [...state.users, newCollector] }));
+    return { ok: true, id };
+  },
 }));
 
 // ---------- Derived helpers ----------

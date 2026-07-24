@@ -14,7 +14,7 @@ function ClientesPage() {
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <AppLayout allowedRoles={["Administrador", "Líder", "Cobrador"]}>
+    <AppLayout allowedRoles={["Administrador", "Líder"]}>
       <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
