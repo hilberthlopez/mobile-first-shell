@@ -46,11 +46,9 @@ const MENUS: Record<Role, NavItem[]> = {
     { title: "Préstamos", url: "/prestamos", icon: HandCoins },
     { title: "Gestión de Ruta", url: "/rutas", icon: RouteIcon },
   ],
+  // Cobrador: acceso restringido — solo Mi Ruta.
   Cobrador: [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Mi Ruta", url: "/mi-ruta", icon: MapPin },
-    { title: "Clientes", url: "/clientes", icon: Users },
-    { title: "Préstamos", url: "/prestamos", icon: HandCoins },
   ],
   Cliente: [
     { title: "Mi Estado de Cuenta", url: "/estado-cuenta", icon: FileText },

@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AppLayout } from "@/components/app-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Users, Route as RouteIcon } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { LeaderDashboard } from "@/components/leader-dashboard";
 
@@ -17,50 +16,22 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-const cobradorMetrics = [
-  { title: "Ventas del día", icon: TrendingUp },
-  { title: "Clientes visitados", icon: Users },
-  { title: "Rutas completadas", icon: RouteIcon },
-];
-
 function Dashboard() {
   const { user } = useAuth();
-  const isLeader = user?.role === "Administrador" || user?.role === "Líder";
+  const navigate = useNavigate();
+
+  // Cobrador y Cliente no tienen acceso al dashboard general — se redirigen.
+  useEffect(() => {
+    if (user?.role === "Cobrador") navigate({ to: "/mi-ruta", replace: true });
+    else if (user?.role === "Cliente") navigate({ to: "/estado-cuenta", replace: true });
+  }, [user, navigate]);
 
   return (
-    <AppLayout allowedRoles={["Administrador", "Líder", "Cobrador"]}>
+    <AppLayout allowedRoles={["Administrador", "Líder"]}>
       <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
-        {isLeader ? (
-          <LeaderDashboard userName={user?.name} role={user?.role} />
-        ) : (
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                ¡Bienvenido, {user?.name}! 👋
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Resumen de actividad para tu rol de <span className="font-medium">{user?.role}</span>.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {cobradorMetrics.map((m) => (
-                <Card key={m.title} className="transition-shadow hover:shadow-md">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {m.title}
-                    </CardTitle>
-                    <m.icon className="h-4 w-4 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">—</div>
-                    <p className="mt-1 text-xs text-muted-foreground">Sin datos aún</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+        <LeaderDashboard userName={user?.name} role={user?.role} />
       </div>
     </AppLayout>
   );
 }
+

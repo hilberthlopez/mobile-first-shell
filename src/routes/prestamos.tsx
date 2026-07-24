@@ -12,7 +12,7 @@ export const Route = createFileRoute("/prestamos")({
     ],
   }),
   component: () => (
-    <AppLayout allowedRoles={["Administrador", "Líder", "Cobrador"]}>
+    <AppLayout allowedRoles={["Administrador", "Líder"]}>
       <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
         <div className="mb-4">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Gestión de Préstamos</h1>
