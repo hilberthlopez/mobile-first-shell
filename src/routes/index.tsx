@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Users, Route as RouteIcon } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,15 +23,16 @@ const metrics = [
 ];
 
 function Dashboard() {
+  const { user } = useAuth();
   return (
-    <AppLayout>
+    <AppLayout allowedRoles={["Administrador", "Líder", "Cobrador"]}>
       <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            ¡Bienvenido de nuevo! 👋
+            ¡Bienvenido, {user?.name}! 👋
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Aquí tienes un resumen de la actividad de hoy.
+            Resumen de actividad para tu rol de <span className="font-medium">{user?.role}</span>.
           </p>
         </div>
 

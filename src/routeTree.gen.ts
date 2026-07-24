@@ -10,12 +10,42 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RutasRouteImport } from './routes/rutas'
+import { Route as MiRutaRouteImport } from './routes/mi-ruta'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as LideresRouteImport } from './routes/lideres'
+import { Route as EstadoCuentaRouteImport } from './routes/estado-cuenta'
+import { Route as CobradoresRouteImport } from './routes/cobradores'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
 
 const RutasRoute = RutasRouteImport.update({
   id: '/rutas',
   path: '/rutas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MiRutaRoute = MiRutaRouteImport.update({
+  id: '/mi-ruta',
+  path: '/mi-ruta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LideresRoute = LideresRouteImport.update({
+  id: '/lideres',
+  path: '/lideres',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstadoCuentaRoute = EstadoCuentaRouteImport.update({
+  id: '/estado-cuenta',
+  path: '/estado-cuenta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CobradoresRoute = CobradoresRouteImport.update({
+  id: '/cobradores',
+  path: '/cobradores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientesRoute = ClientesRouteImport.update({
@@ -32,30 +62,75 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/cobradores': typeof CobradoresRoute
+  '/estado-cuenta': typeof EstadoCuentaRoute
+  '/lideres': typeof LideresRoute
+  '/login': typeof LoginRoute
+  '/mi-ruta': typeof MiRutaRoute
   '/rutas': typeof RutasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/cobradores': typeof CobradoresRoute
+  '/estado-cuenta': typeof EstadoCuentaRoute
+  '/lideres': typeof LideresRoute
+  '/login': typeof LoginRoute
+  '/mi-ruta': typeof MiRutaRoute
   '/rutas': typeof RutasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/cobradores': typeof CobradoresRoute
+  '/estado-cuenta': typeof EstadoCuentaRoute
+  '/lideres': typeof LideresRoute
+  '/login': typeof LoginRoute
+  '/mi-ruta': typeof MiRutaRoute
   '/rutas': typeof RutasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clientes' | '/rutas'
+  fullPaths:
+    | '/'
+    | '/clientes'
+    | '/cobradores'
+    | '/estado-cuenta'
+    | '/lideres'
+    | '/login'
+    | '/mi-ruta'
+    | '/rutas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clientes' | '/rutas'
-  id: '__root__' | '/' | '/clientes' | '/rutas'
+  to:
+    | '/'
+    | '/clientes'
+    | '/cobradores'
+    | '/estado-cuenta'
+    | '/lideres'
+    | '/login'
+    | '/mi-ruta'
+    | '/rutas'
+  id:
+    | '__root__'
+    | '/'
+    | '/clientes'
+    | '/cobradores'
+    | '/estado-cuenta'
+    | '/lideres'
+    | '/login'
+    | '/mi-ruta'
+    | '/rutas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientesRoute: typeof ClientesRoute
+  CobradoresRoute: typeof CobradoresRoute
+  EstadoCuentaRoute: typeof EstadoCuentaRoute
+  LideresRoute: typeof LideresRoute
+  LoginRoute: typeof LoginRoute
+  MiRutaRoute: typeof MiRutaRoute
   RutasRoute: typeof RutasRoute
 }
 
@@ -66,6 +141,41 @@ declare module '@tanstack/react-router' {
       path: '/rutas'
       fullPath: '/rutas'
       preLoaderRoute: typeof RutasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mi-ruta': {
+      id: '/mi-ruta'
+      path: '/mi-ruta'
+      fullPath: '/mi-ruta'
+      preLoaderRoute: typeof MiRutaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lideres': {
+      id: '/lideres'
+      path: '/lideres'
+      fullPath: '/lideres'
+      preLoaderRoute: typeof LideresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estado-cuenta': {
+      id: '/estado-cuenta'
+      path: '/estado-cuenta'
+      fullPath: '/estado-cuenta'
+      preLoaderRoute: typeof EstadoCuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cobradores': {
+      id: '/cobradores'
+      path: '/cobradores'
+      fullPath: '/cobradores'
+      preLoaderRoute: typeof CobradoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clientes': {
@@ -88,18 +198,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientesRoute: ClientesRoute,
+  CobradoresRoute: CobradoresRoute,
+  EstadoCuentaRoute: EstadoCuentaRoute,
+  LideresRoute: LideresRoute,
+  LoginRoute: LoginRoute,
+  MiRutaRoute: MiRutaRoute,
   RutasRoute: RutasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
